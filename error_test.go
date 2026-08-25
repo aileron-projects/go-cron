@@ -27,25 +27,37 @@ func TestParseError(t *testing.T) {
 		tester.AssertEqual(t, "go-cron/cron: parse: invalid xxx. `yyy` [EOF]", msg)
 	})
 	t.Run("errors equal", func(t *testing.T) {
-		err1 := &ParseError{What: "foo", Value: "aaa", Inner: nil}
-		err2 := &ParseError{What: "foo", Value: "bbb", Inner: io.EOF}
-		tester.AssertEqualErr(t, err1, err2)
-	})
-	t.Run("wrapped error equal", func(t *testing.T) {
-		err1 := &ParseError{What: "foo", Value: "aaa", Inner: nil}
-		err2 := &ParseError{What: "foo", Value: "bbb", Inner: io.EOF}
-		err3 := fmt.Errorf("outer error [%w]", err2)
-		tester.AssertEqual(t, true, err1.Is(err3))
-		tester.AssertEqualErr(t, err1, err3)
+		err := &ParseError{What: "foo", Value: "aaa", Inner: nil}
+		target := &ParseError{What: "foo", Value: "bbb", Inner: io.EOF}
+		tester.AssertEqual(t, true, errors.Is(err, target))
 	})
 	t.Run("errors not equal", func(t *testing.T) {
-		err1 := &ParseError{What: "foo", Value: "", Inner: nil}
-		err2 := &ParseError{What: "bar", Value: "", Inner: io.EOF}
-		tester.AssertEqual(t, false, errors.Is(err1, err2))
+		err := &ParseError{What: "foo"}
+		target := &ParseError{What: "bar"}
+		tester.AssertEqual(t, false, errors.Is(err, target))
+	})
+	t.Run("wrapped error equal", func(t *testing.T) {
+		inner := &ParseError{What: "foo", Value: "bbb", Inner: io.EOF}
+		err := fmt.Errorf("outer error [%w]", inner)
+		target := &ParseError{What: "foo", Value: "aaa", Inner: nil}
+		tester.AssertEqual(t, true, errors.Is(err, target))
 	})
 	t.Run("wrapped error not equal", func(t *testing.T) {
-		err1 := &ParseError{What: "foo", Value: "aaa", Inner: nil}
-		err2 := fmt.Errorf("outer error [%w]", io.EOF)
-		tester.AssertEqual(t, false, err1.Is(err2))
+		inner := &ParseError{What: "bar"}
+		err := fmt.Errorf("outer error [%w]", inner)
+		target := &ParseError{What: "foo"}
+		tester.AssertEqual(t, false, errors.Is(err, target))
+	})
+	t.Run("wrapped errors equal", func(t *testing.T) {
+		inner := &ParseError{What: "foo", Value: "bbb", Inner: io.EOF}
+		err := fmt.Errorf("outer error [%w] [%w]", io.EOF, inner)
+		target := &ParseError{What: "foo", Value: "aaa", Inner: nil}
+		tester.AssertEqual(t, true, errors.Is(err, target))
+	})
+	t.Run("wrapped errors not equal", func(t *testing.T) {
+		inner := &ParseError{What: "bar"}
+		err := fmt.Errorf("outer error [%w] [%w]", io.EOF, inner)
+		target := &ParseError{What: "foo"}
+		tester.AssertEqual(t, false, errors.Is(err, target))
 	})
 }

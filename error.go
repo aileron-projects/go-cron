@@ -1,7 +1,5 @@
 package cron
 
-import "errors"
-
 // ParseError reports cron parse error.
 type ParseError struct {
 	Inner error  // Inner is the inner error.
@@ -26,12 +24,9 @@ func (e *ParseError) Error() string {
 }
 
 func (e *ParseError) Is(target error) bool {
-	for target != nil {
-		ee, ok := target.(*ParseError)
-		if ok {
-			return e.What == ee.What
-		}
-		target = errors.Unwrap(target)
+	ee, ok := target.(*ParseError)
+	if ok {
+		return e.What == ee.What
 	}
 	return false
 }
